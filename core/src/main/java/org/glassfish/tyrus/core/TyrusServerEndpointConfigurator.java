@@ -37,7 +37,7 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-package org.glassfish.tyrus.server;
+package org.glassfish.tyrus.core;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +47,10 @@ import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
 import javax.websocket.server.ServerEndpointConfig;
 
-import org.glassfish.tyrus.core.ComponentProviderService;
 import org.glassfish.tyrus.core.extension.ExtendedExtension;
 import org.glassfish.tyrus.core.frame.Frame;
+
+import org.glassfish.hk2.api.ServiceLocator;
 
 /**
  * Tyrus implementation of {@link ServerEndpointConfig.Configurator}.
@@ -62,6 +63,10 @@ public class TyrusServerEndpointConfigurator extends ServerEndpointConfig.Config
 
     public TyrusServerEndpointConfigurator() {
         this.componentProviderService = ComponentProviderService.create();
+    }
+
+    public TyrusServerEndpointConfigurator(ServiceLocator serviceLocator) {
+        this.componentProviderService = ComponentProviderService.create(serviceLocator);
     }
 
     @Override

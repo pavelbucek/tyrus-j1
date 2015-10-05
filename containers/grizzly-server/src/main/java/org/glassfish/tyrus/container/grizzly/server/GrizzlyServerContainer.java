@@ -75,6 +75,7 @@ import org.glassfish.grizzly.http.util.ContentType;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
 import org.glassfish.grizzly.strategies.WorkerThreadIOStrategy;
 import org.glassfish.grizzly.threadpool.ThreadPoolConfig;
+import org.glassfish.hk2.api.ServiceLocator;
 
 /**
  * Grizzly implementation of {@link ServerContainerFactory} and {@link ServerContainer}.
@@ -270,6 +271,10 @@ public class GrizzlyServerContainer extends ServerContainerFactory {
         final DebugContext.TracingThreshold tracingThreshold =
                 Utils.getProperty(localProperties, TyrusWebSocketEngine.TRACING_THRESHOLD,
                         DebugContext.TracingThreshold.class, DebugContext.TracingThreshold.TRACE);
+        final ServiceLocator serviceLocator =
+                Utils.getProperty(localProperties, TyrusWebSocketEngine.SERVICE_LOCATOR,
+                        ServiceLocator.class, null);
+
 
         return new TyrusServerContainer((Set<Class<?>>) null) {
 
@@ -283,6 +288,7 @@ public class GrizzlyServerContainer extends ServerContainerFactory {
                             .parallelBroadcastEnabled(parallelBroadcastEnabled)
                             .tracingType(tracingType)
                             .tracingThreshold(tracingThreshold)
+                            .serviceLocator(serviceLocator)
                             .build();
 
             private String contextPath;

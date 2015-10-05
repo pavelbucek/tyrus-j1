@@ -546,7 +546,7 @@ public class ClientManager extends BaseContainer implements WebSocketContainer {
                         } else if ((((Class<?>) o).getAnnotation(ClientEndpoint.class) != null)) {
                             endpoint = AnnotatedEndpoint
                                     .fromClass((Class) o, componentProvider, false, incomingBufferSize, collector,
-                                               EndpointEventListener.NO_OP);
+                                               EndpointEventListener.NO_OP, null);
                             config = (ClientEndpointConfig) ((AnnotatedEndpoint) endpoint).getEndpointConfig();
                         } else {
                             collector.addException(new DeploymentException(String.format(
@@ -557,7 +557,7 @@ public class ClientManager extends BaseContainer implements WebSocketContainer {
                         }
                     } else {
                         endpoint = AnnotatedEndpoint
-                                .fromInstance(o, componentProvider, false, incomingBufferSize, collector);
+                                .fromInstance(o, componentProvider, false, incomingBufferSize, collector, null);
                         config = (ClientEndpointConfig) ((AnnotatedEndpoint) endpoint).getEndpointConfig();
                     }
 

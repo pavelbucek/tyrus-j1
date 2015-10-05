@@ -1,1 +1,1 @@
-org.glassfish.tyrus.server.TyrusServerEndpointConfigurator
+org.glassfish.tyrus.core.TyrusServerEndpointConfigurator

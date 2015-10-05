@@ -77,6 +77,8 @@ import org.glassfish.tyrus.core.coder.PrimitiveDecoders;
 import org.glassfish.tyrus.core.l10n.LocalizationMessages;
 import org.glassfish.tyrus.core.monitoring.EndpointEventListener;
 
+import org.glassfish.hk2.api.ServiceLocator;
+
 /**
  * {@link Endpoint} descendant which represents deployed annotated endpoint.
  *
@@ -98,6 +100,7 @@ public class AnnotatedEndpoint extends Endpoint {
     private final EndpointConfig configuration;
     private final ComponentProviderService componentProvider;
     private final EndpointEventListener endpointEventListener;
+    private final ServiceLocator serviceLocator;
 
     private final Set<MessageHandlerFactory> messageHandlerFactories = new HashSet<MessageHandlerFactory>();
 
@@ -114,9 +117,9 @@ public class AnnotatedEndpoint extends Endpoint {
      */
     public static AnnotatedEndpoint fromClass(Class<?> annotatedClass, ComponentProviderService componentProvider,
                                               boolean isServerEndpoint, int incomingBufferSize, ErrorCollector
-            collector, EndpointEventListener endpointEventListener) {
+            collector, EndpointEventListener endpointEventListener, ServiceLocator serviceLocator) {
         return new AnnotatedEndpoint(annotatedClass, null, componentProvider, isServerEndpoint, incomingBufferSize,
-                                     collector, endpointEventListener);
+                                     collector, endpointEventListener, serviceLocator);
     }
 
     /**
@@ -131,18 +134,20 @@ public class AnnotatedEndpoint extends Endpoint {
      */
     public static AnnotatedEndpoint fromInstance(
             Object annotatedInstance, ComponentProviderService componentProvider, boolean isServerEndpoint,
-            int incomingBufferSize, ErrorCollector collector) {
+            int incomingBufferSize, ErrorCollector collector, ServiceLocator serviceLocator) {
         return new AnnotatedEndpoint(annotatedInstance.getClass(), annotatedInstance, componentProvider,
-                                     isServerEndpoint, incomingBufferSize, collector, EndpointEventListener.NO_OP);
+                isServerEndpoint, incomingBufferSize, collector, EndpointEventListener.NO_OP,
+                serviceLocator);
     }
 
     private AnnotatedEndpoint(Class<?> annotatedClass, Object instance, ComponentProviderService componentProvider,
                               Boolean isServerEndpoint, int incomingBufferSize, ErrorCollector collector,
-                              EndpointEventListener endpointEventListener) {
-        this.configuration = createEndpointConfig(annotatedClass, isServerEndpoint, collector);
+                              EndpointEventListener endpointEventListener, ServiceLocator serviceLocator) {
         this.annotatedInstance = instance;
         this.annotatedClass = annotatedClass;
         this.endpointEventListener = endpointEventListener;
+        this.serviceLocator = serviceLocator;
+        this.configuration = createEndpointConfig(annotatedClass, isServerEndpoint, collector, serviceLocator);
         this.componentProvider = isServerEndpoint ? new ComponentProviderService(componentProvider) {
             @Override
             public <T> Object getEndpointInstance(Class<T> endpointClass) throws InstantiationException {
@@ -274,7 +279,7 @@ public class AnnotatedEndpoint extends Endpoint {
     }
 
     private EndpointConfig createEndpointConfig(Class<?> annotatedClass, boolean isServerEndpoint, ErrorCollector
-            collector) {
+            collector, ServiceLocator locator) {
         if (isServerEndpoint) {
             final ServerEndpoint wseAnnotation = annotatedClass.getAnnotation(ServerEndpoint.class);
 
@@ -320,6 +325,8 @@ public class AnnotatedEndpoint extends Endpoint {
                 if (!wseAnnotation.configurator().equals(ServerEndpointConfig.Configurator.class)) {
                     builder = builder.configurator(ReflectionHelper.getInstance(wseAnnotation.configurator(),
                                                                                 collector));
+                } else {
+                    builder = builder.configurator(new TyrusServerEndpointConfigurator(serviceLocator));
                 }
                 return builder.build();
             }

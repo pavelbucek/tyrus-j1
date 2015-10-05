@@ -56,6 +56,8 @@ import javax.websocket.Session;
 
 import org.glassfish.tyrus.core.l10n.LocalizationMessages;
 
+import org.glassfish.hk2.api.ServiceLocator;
+
 /**
  * Provides an instance of component. Searches for registered {@link ComponentProvider}s which are used to provide
  * instances.
@@ -86,9 +88,31 @@ public class ComponentProviderService {
             foundProviders.add(componentProvider);
         }
 
-        foundProviders.add(new DefaultComponentProvider());
+        foundProviders.add(new DefaultComponentProvider(null));
         return new ComponentProviderService(Collections.unmodifiableList(foundProviders));
     }
+
+    /**
+     * Create new instance of {@link ComponentProviderService}.
+     * </p>
+     * Searches for registered {@link ComponentProvider}s and registers them with this service.
+     * </p>
+     * {@link DefaultComponentProvider} is always added to found providers.
+     *
+     * @return initialized {@link ComponentProviderService}.
+     */
+    public static ComponentProviderService create(ServiceLocator serviceLocator) {
+        final List<ComponentProvider> foundProviders = new ArrayList<ComponentProvider>();
+        ServiceFinder<ComponentProvider> finder = ServiceFinder.find(ComponentProvider.class);
+
+        for (ComponentProvider componentProvider : finder) {
+            foundProviders.add(componentProvider);
+        }
+
+        foundProviders.add(new DefaultComponentProvider(serviceLocator));
+        return new ComponentProviderService(Collections.unmodifiableList(foundProviders));
+    }
+
 
     /**
      * Create new instance of {@link ComponentProviderService}.
@@ -102,7 +126,7 @@ public class ComponentProviderService {
      */
     public static ComponentProviderService createClient() {
         return new ComponentProviderService(
-                Collections.unmodifiableList(Arrays.<ComponentProvider>asList(new DefaultComponentProvider())));
+                Collections.unmodifiableList(Arrays.<ComponentProvider>asList(new DefaultComponentProvider(null))));
     }
 
     private ComponentProviderService(List<ComponentProvider> providers) {

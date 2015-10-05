@@ -42,12 +42,20 @@ package org.glassfish.tyrus.core;
 
 import java.lang.reflect.Method;
 
+import org.glassfish.hk2.api.ServiceLocator;
+
 /**
  * Provides instances using reflection.
  *
  * @author Stepan Kopriva (stepan.kopriva at oracle.com)
  */
 public class DefaultComponentProvider extends ComponentProvider {
+
+    private final ServiceLocator serviceLocator;
+
+    public DefaultComponentProvider(ServiceLocator serviceLocator) {
+        this.serviceLocator = serviceLocator;
+    }
 
     @Override
     public boolean isApplicable(Class<?> c) {
@@ -56,6 +64,10 @@ public class DefaultComponentProvider extends ComponentProvider {
 
     @Override
     public <T> Object create(Class<T> toLoad) {
+        if (serviceLocator != null) {
+            return serviceLocator.create(toLoad);
+        }
+
         try {
             return ReflectionHelper.getInstance(toLoad);
         } catch (Exception e) {
