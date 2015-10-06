@@ -65,7 +65,7 @@ public class DefaultComponentProvider extends ComponentProvider {
     @Override
     public <T> Object create(Class<T> toLoad) {
         if (serviceLocator != null) {
-            return serviceLocator.create(toLoad);
+            return serviceLocator.createAndInitialize(toLoad);
         }
 
         try {
