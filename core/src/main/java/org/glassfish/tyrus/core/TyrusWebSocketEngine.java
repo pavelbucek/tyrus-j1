@@ -77,7 +77,10 @@ import org.glassfish.tyrus.spi.UpgradeResponse;
 import org.glassfish.tyrus.spi.WebSocketEngine;
 import org.glassfish.tyrus.spi.Writer;
 
+import org.glassfish.hk2.api.DynamicConfiguration;
+import org.glassfish.hk2.api.DynamicConfigurationService;
 import org.glassfish.hk2.api.ServiceLocator;
+import org.glassfish.hk2.utilities.binding.AbstractBinder;
 
 /**
  * {@link WebSocketEngine} implementation, which handles server-side handshake, validation and data processing.
@@ -181,6 +184,7 @@ public class TyrusWebSocketEngine implements WebSocketEngine {
 
     private final Set<TyrusEndpointWrapper> endpointWrappers =
             Collections.newSetFromMap(new ConcurrentHashMap<TyrusEndpointWrapper, Boolean>());
+    private final Sessions sessions = new Sessions(endpointWrappers);
     private final ServiceLocator serviceLocator;
     private final ComponentProviderService componentProviderService;
     private final WebSocketContainer webSocketContainer;
@@ -314,6 +318,22 @@ public class TyrusWebSocketEngine implements WebSocketEngine {
                 }
             }
         };
+
+
+        final DynamicConfigurationService dcs = serviceLocator.getService(DynamicConfigurationService.class);
+        final DynamicConfiguration dc = dcs.createDynamicConfiguration();
+
+        final AbstractBinder binder = new AbstractBinder() {
+            @Override
+            protected void configure() {
+                bind(TyrusWebSocketEngine.this.sessions);
+            }
+        };
+
+        serviceLocator.inject(binder);
+        binder.bind(dc);
+
+        dc.commit();
     }
 
     private static ProtocolHandler loadHandler(UpgradeRequest request) {
