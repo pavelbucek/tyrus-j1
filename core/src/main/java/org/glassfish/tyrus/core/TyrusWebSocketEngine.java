@@ -319,21 +319,22 @@ public class TyrusWebSocketEngine implements WebSocketEngine {
             }
         };
 
+        if (serviceLocator != null) {
+            final DynamicConfigurationService dcs = serviceLocator.getService(DynamicConfigurationService.class);
+            final DynamicConfiguration dc = dcs.createDynamicConfiguration();
 
-        final DynamicConfigurationService dcs = serviceLocator.getService(DynamicConfigurationService.class);
-        final DynamicConfiguration dc = dcs.createDynamicConfiguration();
+            final AbstractBinder binder = new AbstractBinder() {
+                @Override
+                protected void configure() {
+                    bind(TyrusWebSocketEngine.this.sessions);
+                }
+            };
 
-        final AbstractBinder binder = new AbstractBinder() {
-            @Override
-            protected void configure() {
-                bind(TyrusWebSocketEngine.this.sessions);
-            }
-        };
+            serviceLocator.inject(binder);
+            binder.bind(dc);
 
-        serviceLocator.inject(binder);
-        binder.bind(dc);
-
-        dc.commit();
+            dc.commit();
+        }
     }
 
     private static ProtocolHandler loadHandler(UpgradeRequest request) {

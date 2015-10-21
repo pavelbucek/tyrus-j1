@@ -442,7 +442,7 @@ public class AnnotatedEndpoint extends Endpoint {
                         return result;
                     }
                 };
-            } else if (type == Session.class) {
+            } else if (type == Session.class || type == TyrusSession.class) {
                 if (sessionPresent) {
                     collector.addException(new DeploymentException(
                             LocalizationMessages.ENDPOINT_MULTIPLE_SESSION_PARAM(method.getName())));

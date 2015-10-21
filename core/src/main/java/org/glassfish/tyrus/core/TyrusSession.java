@@ -57,8 +57,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import javax.websocket.CloseReason;
 import javax.websocket.DecodeException;
@@ -501,6 +503,51 @@ public class TyrusSession implements Session, DistributedSession {
 
         heartbeatTask = service.scheduleAtFixedRate(new HeartbeatCommand(), heartbeatInterval, heartbeatInterval,
                                                     TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Get a stream which represents message handler of given type.
+     *
+     * (Implementation note - I cannot think straight for some reason, there must me much more elegant way to do this.)
+     *
+     * @param clazz    type of the processed messages.
+     *
+     * @param consumer stream consumer.
+     * @param <T>      generic param of processed messages.
+     */
+    public <T> void processMessages(Class<T> clazz, final Consumer<Stream<T>> consumer) {
+
+        final AtomicReference<T> tAtomicReference = new AtomicReference<>(null);
+        final Object lock = new Object();
+
+        new Thread() {
+            @Override
+            public void run() {
+                consumer.accept(Stream.generate(() -> {
+                    T message;
+                    synchronized (lock) {
+                        message = tAtomicReference.get();
+                        try {
+                            while (message == null) {
+                                lock.wait();
+                                message = tAtomicReference.get();
+                            }
+                            tAtomicReference.set(null);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    return message;
+                }));
+            }
+        }.start();
+
+        this.addMessageHandler(clazz, message -> {
+            synchronized (lock) {
+                tAtomicReference.set(message);
+                lock.notifyAll();
+            }
+        });
     }
 
     void restartIdleTimeoutExecutor() {
